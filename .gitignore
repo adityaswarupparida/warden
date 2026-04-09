@@ -1,0 +1,10 @@
+.env
+
+.DS_Store
+
+/bin/                                                                                                                                                                        
+*.exe
+
+.idea/
+.vscode/
+.cursor/
