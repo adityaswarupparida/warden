@@ -19,6 +19,10 @@ func main() {
 		log.Fatalf("failed to create database pool: %v", err)
 	}
 	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		log.Fatalf("failed to ping database: %v", err)
+	}
+
 	h := handler.NewHandler(pool)
 
 	e := echo.New()
