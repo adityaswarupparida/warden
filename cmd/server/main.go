@@ -23,7 +23,8 @@ func main() {
 		log.Fatalf("failed to ping database: %v", err)
 	}
 
-	h := handler.NewHandler(pool)
+	st := store.NewStore(pool)
+	h := handler.NewHandler(st)
 
 	e := echo.New()
 	api.RegisterRoutes(e, h)

@@ -3,30 +3,36 @@ package handler
 import (
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
 )
 
-type Handler struct {
-	pool *pgxpool.Pool
-}
-
-func NewHandler(pool *pgxpool.Pool) *Handler {
-	return &Handler{pool: pool}
+type CreateServiceRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 func (h *Handler) GetServices(c *echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
+	services, err := h.store.GetServices(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get services"})
+	}
+
+	return c.JSON(http.StatusOK, services)
 }
 
 func (h *Handler) CreateService(c *echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
-}
+	var req CreateServiceRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	}
+	if req.Name == "" || req.Description == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "name and description are required"})
+	}
 
-func (h *Handler) GetServiceIncidents(c *echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
-}
+	svc, err := h.store.CreateService(c.Request().Context(), req.Name, req.Description)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create service"})
+	}
 
-func (h *Handler) CreateServiceIncident(c *echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
+	return c.JSON(http.StatusCreated, svc)
 }
