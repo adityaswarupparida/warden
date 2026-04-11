@@ -61,6 +61,32 @@ func TestCreateServiceIncident_InvalidBody_Returns400(t *testing.T) {
 	assert.Contains(t, rec.Body.String(), "invalid request")
 }
 
+// ResolveServiceIncident
+func TestResolveServiceIncident_Returns204(t *testing.T) {
+	h := NewHandler(&mockStore{})
+	e := echo.New()
+	c, rec := newTestContext(e, http.MethodPatch, "/api/v1/services/svc-1/incidents/inc-1/resolve", "")
+	c.Set("id", "svc-1")
+	c.Set("incident_id", "inc-1")
+
+	_ = h.ResolveServiceIncident(c)
+
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestResolveServiceIncident_StoreFailure_Returns500(t *testing.T) {
+	h := NewHandler(&mockStore{err: errors.New("db error")})
+	e := echo.New()
+	c, rec := newTestContext(e, http.MethodPatch, "/api/v1/services/svc-1/incidents/inc-1/resolve", "")
+	c.Set("id", "svc-1")
+	c.Set("incident_id", "inc-1")
+
+	_ = h.ResolveServiceIncident(c)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	assert.Contains(t, rec.Body.String(), "failed to resolve incident")
+}
+
 func TestCreateServiceIncident_StoreFailure_Returns500(t *testing.T) {
 	h := NewHandler(&mockStore{err: errors.New("db error")})
 	e := echo.New()

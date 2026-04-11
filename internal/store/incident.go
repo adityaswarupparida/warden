@@ -40,15 +40,66 @@ func (s *pgStore) GetIncidents(ctx context.Context, serviceID string) ([]Inciden
 }
 
 func (s *pgStore) CreateIncident(ctx context.Context, serviceID, title, description, severity string) (*Incident, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
 	var inc Incident
-	err := s.pool.QueryRow(ctx,
+	err = tx.QueryRow(ctx,
 		"INSERT INTO incidents (service_id, title, description, severity) VALUES ($1, $2, $3, $4) RETURNING id, service_id, title, description, status, severity, created_at, updated_at, resolved_at",
 		serviceID, title, description, severity,
 	).Scan(&inc.ID, &inc.ServiceID, &inc.Title, &inc.Description, &inc.Status, &inc.Severity, &inc.CreatedAt, &inc.UpdatedAt, &inc.ResolvedAt)
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE services SET status = CASE
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL AND severity = 'critical') THEN 'down'
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL) THEN 'degraded'
+			ELSE 'healthy'
+		END
+		WHERE id = $1`, serviceID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
 	return &inc, nil
+}
+
+func (s *pgStore) ResolveIncident(ctx context.Context, serviceID, incidentID string) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx,
+		"UPDATE incidents SET resolved_at = NOW(), updated_at = NOW() WHERE id = $1 AND service_id = $2 AND resolved_at IS NULL",
+		incidentID, serviceID,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE services SET status = CASE
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL AND severity = 'critical') THEN 'down'
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL) THEN 'degraded'
+			ELSE 'healthy'
+		END
+		WHERE id = $1`, serviceID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *pgStore) CreateIncidentUpdate(ctx context.Context, incidentID, message, status string) (*IncidentUpdate, error) {

@@ -11,6 +11,7 @@ type Store interface {
 	CreateService(ctx context.Context, name, description string) (*Service, error)
 	GetIncidents(ctx context.Context, serviceID string) ([]Incident, error)
 	CreateIncident(ctx context.Context, serviceID, title, description, severity string) (*Incident, error)
+	ResolveIncident(ctx context.Context, serviceID, incidentID string) error
 }
 
 type pgStore struct {
