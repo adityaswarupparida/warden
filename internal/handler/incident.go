@@ -2,15 +2,17 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/adityaswarupparida/warden/internal/metrics"
 	"github.com/labstack/echo/v5"
 )
 
 type CreateIncidentRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Severity    string `json:"severity"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Severity    string     `json:"severity"`
+	OccurredAt  *time.Time `json:"occurred_at"`
 }
 
 func (h *Handler) GetServiceIncidents(c *echo.Context) error {
@@ -18,6 +20,7 @@ func (h *Handler) GetServiceIncidents(c *echo.Context) error {
 
 	incidents, err := h.store.GetIncidents(c.Request().Context(), serviceID)
 	if err != nil {
+		c.Logger().Error("GetIncidents", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get incidents"})
 	}
 
@@ -32,8 +35,9 @@ func (h *Handler) CreateServiceIncident(c *echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	inc, err := h.store.CreateIncident(c.Request().Context(), serviceID, req.Title, req.Description, req.Severity)
+	inc, err := h.store.CreateIncident(c.Request().Context(), serviceID, req.Title, req.Description, req.Severity, req.OccurredAt)
 	if err != nil {
+		c.Logger().Error("CreateIncident", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create incident"})
 	}
 
@@ -47,6 +51,7 @@ func (h *Handler) ResolveServiceIncident(c *echo.Context) error {
 	incidentID := c.Param("incident_id")
 
 	if err := h.store.ResolveIncident(c.Request().Context(), serviceID, incidentID); err != nil {
+		c.Logger().Error("ResolveIncident", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to resolve incident"})
 	}
 

@@ -14,6 +14,7 @@ type Incident struct {
 	Description string     `db:"description"`
 	Status      string     `db:"status"`
 	Severity    string     `db:"severity"`
+	OccurredAt  *time.Time `db:"occurred_at"`
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
 	ResolvedAt  *time.Time `db:"resolved_at"`
@@ -29,7 +30,7 @@ type IncidentUpdate struct {
 
 func (s *pgStore) GetIncidents(ctx context.Context, serviceID string) ([]Incident, error) {
 	rows, err := s.pool.Query(ctx,
-		"SELECT id, service_id, title, description, status, severity, created_at, updated_at, resolved_at FROM incidents WHERE service_id = $1",
+		"SELECT id, service_id, title, description, status, severity, occurred_at, created_at, updated_at, resolved_at FROM incidents WHERE service_id = $1",
 		serviceID,
 	)
 	if err != nil {
@@ -39,7 +40,7 @@ func (s *pgStore) GetIncidents(ctx context.Context, serviceID string) ([]Inciden
 	return pgx.CollectRows(rows, pgx.RowToStructByName[Incident])
 }
 
-func (s *pgStore) CreateIncident(ctx context.Context, serviceID, title, description, severity string) (*Incident, error) {
+func (s *pgStore) CreateIncident(ctx context.Context, serviceID, title, description, severity string, occurredAt *time.Time) (*Incident, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -48,20 +49,20 @@ func (s *pgStore) CreateIncident(ctx context.Context, serviceID, title, descript
 
 	var inc Incident
 	err = tx.QueryRow(ctx,
-		"INSERT INTO incidents (service_id, title, description, severity) VALUES ($1, $2, $3, $4) RETURNING id, service_id, title, description, status, severity, created_at, updated_at, resolved_at",
-		serviceID, title, description, severity,
-	).Scan(&inc.ID, &inc.ServiceID, &inc.Title, &inc.Description, &inc.Status, &inc.Severity, &inc.CreatedAt, &inc.UpdatedAt, &inc.ResolvedAt)
+		"INSERT INTO incidents (service_id, title, description, severity, occurred_at) VALUES ($1::uuid, $2, $3, $4::incident_severity, $5) RETURNING id, service_id, title, description, status, severity, occurred_at, created_at, updated_at, resolved_at",
+		serviceID, title, description, severity, occurredAt,
+	).Scan(&inc.ID, &inc.ServiceID, &inc.Title, &inc.Description, &inc.Status, &inc.Severity, &inc.OccurredAt, &inc.CreatedAt, &inc.UpdatedAt, &inc.ResolvedAt)
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = tx.Exec(ctx, `
 		UPDATE services SET status = CASE
-			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL AND severity = 'critical') THEN 'down'
-			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL) THEN 'degraded'
-			ELSE 'healthy'
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL AND severity = 'critical'::incident_severity) THEN 'down'::service_status
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL) THEN 'degraded'::service_status
+			ELSE 'healthy'::service_status
 		END
-		WHERE id = $1`, serviceID)
+		WHERE id = $1::uuid`, serviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,11 +91,11 @@ func (s *pgStore) ResolveIncident(ctx context.Context, serviceID, incidentID str
 
 	_, err = tx.Exec(ctx, `
 		UPDATE services SET status = CASE
-			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL AND severity = 'critical') THEN 'down'
-			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL) THEN 'degraded'
-			ELSE 'healthy'
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL AND severity = 'critical'::incident_severity) THEN 'down'::service_status
+			WHEN EXISTS (SELECT 1 FROM incidents WHERE service_id = $1 AND resolved_at IS NULL) THEN 'degraded'::service_status
+			ELSE 'healthy'::service_status
 		END
-		WHERE id = $1`, serviceID)
+		WHERE id = $1::uuid`, serviceID)
 	if err != nil {
 		return err
 	}

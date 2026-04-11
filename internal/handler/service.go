@@ -14,6 +14,7 @@ type CreateServiceRequest struct {
 func (h *Handler) GetServices(c *echo.Context) error {
 	services, err := h.store.GetServices(c.Request().Context())
 	if err != nil {
+		c.Logger().Error("GetServices", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get services"})
 	}
 
@@ -31,6 +32,7 @@ func (h *Handler) CreateService(c *echo.Context) error {
 
 	svc, err := h.store.CreateService(c.Request().Context(), req.Name, req.Description)
 	if err != nil {
+		c.Logger().Error("CreateService", "error", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create service"})
 	}
 

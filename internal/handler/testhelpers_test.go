@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http/httptest"
 	"strings"
+	"time"
 
 	"github.com/adityaswarupparida/warden/internal/store"
 	"github.com/labstack/echo/v5"
@@ -26,7 +27,7 @@ func (m *mockStore) CreateService(ctx context.Context, name, description string)
 func (m *mockStore) GetIncidents(ctx context.Context, serviceID string) ([]store.Incident, error) {
 	return m.incidents, m.err
 }
-func (m *mockStore) CreateIncident(ctx context.Context, serviceID, title, description, severity string) (*store.Incident, error) {
+func (m *mockStore) CreateIncident(ctx context.Context, serviceID, title, description, severity string, occurredAt *time.Time) (*store.Incident, error) {
 	return m.incident, m.err
 }
 func (m *mockStore) ResolveIncident(ctx context.Context, serviceID, incidentID string) error {
