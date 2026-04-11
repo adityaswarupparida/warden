@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: warden
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: warden
+  template:
+    metadata:
+      labels:
+        app: warden
+    spec:
+      initContainers:                                                                                                                                                           
+        - name: migrate
+          image: adityaswarupparida/warden:latest                                                                                                                               
+          command: ["/app/migrate", "-path", "/app/migrations", "-database", "$(POSTGRESQL_URL)", "up"]
+          env:                                                                                                                                                                  
+            - name: POSTGRESQL_URL
+              valueFrom:                                                                                                                                                        
+                secretKeyRef:
+                  name: warden-secret
+                  key: postgresql-url
+      containers:
+        - name: warden
+          image: adityaswarupparida/warden:latest
+          ports:
+            - containerPort: 1323
+          env:
+            - name: POSTGRESQL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: warden-secret
+                  key: postgresql-url
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 1323
+            initialDelaySeconds: 5
+            periodSeconds: 10

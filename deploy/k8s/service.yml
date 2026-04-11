@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: warden
+spec:
+  selector:
+    app: warden
+  ports:            
+    - port: 80                                                                                                                                                                  
+      targetPort: 1323
+      name: http
+  type: LoadBalancer

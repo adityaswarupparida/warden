@@ -8,3 +8,6 @@
 .idea/
 .vscode/
 .cursor/
+
+secret.yml
+*-key.yml
