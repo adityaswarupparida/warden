@@ -33,6 +33,9 @@ func (m *mockStore) CreateIncident(ctx context.Context, serviceID, title, descri
 func (m *mockStore) ResolveIncident(ctx context.Context, serviceID, incidentID string) error {
 	return m.err
 }
+func (m *mockStore) CountActiveIncidents(ctx context.Context) (int64, error) {
+	return 0, m.err
+}
 
 func newTestContext(e *echo.Echo, method, path, body string) (*echo.Context, *httptest.ResponseRecorder) {
 	req := httptest.NewRequest(method, path, strings.NewReader(body))

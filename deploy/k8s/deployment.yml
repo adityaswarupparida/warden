@@ -12,16 +12,23 @@ spec:
       labels:
         app: warden
     spec:
-      initContainers:                                                                                                                                                           
+      initContainers:
         - name: migrate
-          image: adityaswarupparida/warden:latest                                                                                                                               
+          image: adityaswarupparida/warden:latest
           command: ["/app/migrate", "-path", "/app/migrations", "-database", "$(POSTGRESQL_URL)", "up"]
-          env:                                                                                                                                                                  
+          env:
             - name: POSTGRESQL_URL
-              valueFrom:                                                                                                                                                        
+              valueFrom:
                 secretKeyRef:
                   name: warden-secret
                   key: postgresql-url
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
       containers:
         - name: warden
           image: adityaswarupparida/warden:latest
@@ -33,6 +40,13 @@ spec:
                 secretKeyRef:
                   name: warden-secret
                   key: postgresql-url
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
           livenessProbe:
             httpGet:
               path: /healthz

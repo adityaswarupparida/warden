@@ -7,6 +7,7 @@ import (
 
 	"github.com/adityaswarupparida/warden/internal/api"
 	"github.com/adityaswarupparida/warden/internal/handler"
+	"github.com/adityaswarupparida/warden/internal/metrics"
 	"github.com/adityaswarupparida/warden/internal/store"
 
 	"github.com/labstack/echo/v5"
@@ -24,6 +25,13 @@ func main() {
 	}
 
 	st := store.NewStore(pool)
+
+	count, err := st.CountActiveIncidents(ctx)
+	if err != nil {
+		log.Fatalf("failed to count active incidents: %v", err)
+	}
+	metrics.ActiveIncidents.Set(float64(count))
+
 	h := handler.NewHandler(st)
 
 	e := echo.New()

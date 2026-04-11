@@ -103,6 +103,12 @@ func (s *pgStore) ResolveIncident(ctx context.Context, serviceID, incidentID str
 	return tx.Commit(ctx)
 }
 
+func (s *pgStore) CountActiveIncidents(ctx context.Context) (int64, error) {
+	var count int64
+	err := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM incidents WHERE resolved_at IS NULL").Scan(&count)
+	return count, err
+}
+
 func (s *pgStore) CreateIncidentUpdate(ctx context.Context, incidentID, message, status string) (*IncidentUpdate, error) {
 	var u IncidentUpdate
 	err := s.pool.QueryRow(ctx,

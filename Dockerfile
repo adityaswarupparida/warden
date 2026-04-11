@@ -7,10 +7,13 @@ RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate
 COPY . .                                                                                                                                                                        
 RUN go build -o warden ./cmd/server                                                                                                                                             
                                                                                                                                                                                 
-FROM alpine:latest
-WORKDIR /app                                                                                                                                                                    
+FROM alpine:3.23
+RUN addgroup -S warden && adduser -S warden -G warden
+WORKDIR /app
 COPY --from=builder /app/warden .
 COPY --from=builder /app/migrations/ ./migrations/
 COPY --from=builder /go/bin/migrate .
+RUN chown -R warden:warden /app
+USER warden
 EXPOSE 1323
 CMD ["./warden"]
