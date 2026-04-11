@@ -2,6 +2,7 @@ grafana:
   adminPassword: admin
   service:
     type: LoadBalancer
-prometheus:           
-  prometheusSpec:                                                                                                                                                               
+prometheus:
+  prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
