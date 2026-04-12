@@ -1,13 +1,16 @@
 include .env
 export
 
-.PHONY: setup delete cloud-provider cluster-create seal-secrets backup-key restore-key sealed-secrets postgres monitoring upgrade-monitoring deploy rollout
+.PHONY: setup setup-external delete cloud-provider cluster-create seal-secrets backup-key restore-key sealed-secrets postgres monitoring upgrade-monitoring deploy rollout
 
 ##############################################################
 # Setup
 ##############################################################
 
 setup: cluster-create sealed-secrets restore-key postgres monitoring deploy
+	@echo "=======================Cluster is ready==============================="
+
+setup-external: cluster-create sealed-secrets seal-secrets monitoring deploy
 	@echo "=======================Cluster is ready==============================="
 
 ##############################################################
