@@ -217,6 +217,15 @@ kubectl get svc monitoring-grafana
 
 Open `http://<EXTERNAL-IP>` in your browser. Login with `admin` / `admin`.
 
+**Import the Dashboard**
+
+1. Go to **Connections → Data Sources → Prometheus**
+   - Update **Scrape interval** to `15s`
+   - Click **Save & Test**
+2. Go to **Dashboards → New → Import**
+   - Upload `monitoring/dashboard/service-health.json` or paste its contents
+   - Click **Load**
+
 The **Service Health Monitoring** dashboard visualises the four Golden Signals:
 - Traffic — requests per second
 - Errors — error rate

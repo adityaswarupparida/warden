@@ -11,3 +11,5 @@
 
 secret.yml
 *-key.yml
+
+*.zip

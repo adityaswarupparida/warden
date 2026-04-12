@@ -74,7 +74,7 @@
       "targets": [
         {
           "editorMode": "builder",
-          "expr": "avg(warden_active_incidents_total{service=\"warden\"})",
+          "expr": "max(warden_active_incidents_total{service=\"warden\"})",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -596,6 +596,6 @@
   "timezone": "browser",
   "title": "Service Health Monitoring",
   "uid": "addd49v",
-  "version": 10,
+  "version": 11,
   "weekStart": ""
 }
