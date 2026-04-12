@@ -236,3 +236,14 @@ The **Service Health Monitoring** dashboard visualises the four Golden Signals:
 ```bash
 make delete
 ```
+
+## DevOps Artifacts
+                                                                                                                                                                                  
+  | Artifact | Location |                                                                                                                                                         
+  |---|---|                                                                                                                                                                       
+  | Dockerfile | `Dockerfile` |                                                                                                                                                   
+  | CI/CD Pipeline | `.github/workflows/` |
+  | Kubernetes Manifests | `deploy/k8s/` |
+  | Helm Values | `deploy/helm/` |                                                                                                                                                
+  | Cluster Config (IaC) | `deploy/cluster.yml` |
+  | Grafana Dashboard | `monitoring/dashboard/` |
